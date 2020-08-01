@@ -1,26 +1,26 @@
-2020-08-01 10:59:36: Downloading deals
-2020-08-01 10:59:36: Downloading employees to assign, +0:00:00.473214s
-2020-08-01 10:59:37: Transferring deals, +0:00:00.660140s
-2020-08-01 10:59:46: Adding comments, +0:00:09.126368s
-2020-08-01 10:59:47: Downloading deals: starting, +0:00:00.792782s
-2020-08-01 10:59:47: Downloading deals: finished in 0:00:00.288013s
-2020-08-01 10:59:47: Getting contacts: starting, +0:00:00s
-2020-08-01 10:59:48: Getting contacts: finished in 0:00:00.776229s
-2020-08-01 10:59:48: Transforming data: starting, +0:00:00s
-2020-08-01 10:59:48: Transforming data: finished in 0:00:00s
-2020-08-01 10:59:48: Patching assignments: starting, +0:00:00.001000s
-2020-08-01 10:59:51: Done with 0 errors, +0:00:02.710109s
-2020-08-01 10:59:51: Patching assignments: finished in 0:00:02.710109s
-2020-08-01 10:59:51: Downloading users, +0:00:00.006999s
-2020-08-01 10:59:51: Downloading stages, +0:00:00.140010s
-2020-08-01 10:59:51: Downloading deals, +0:00:00.622140s
-2020-08-01 10:59:53: Transforming deals, +0:00:01.131449s
-2020-08-01 10:59:53: Writing deals to file, +0:00:00.006007s
-2020-08-01 10:59:53: Downloading deal activities, +0:00:00.035998s
-2020-08-01 10:59:54: 11765 activities downloaded, +0:00:01.589338s
-2020-08-01 10:59:54: Transforming activities, +0:00:00s
-2020-08-01 10:59:54: Writing activities to file, +0:00:00.057009s
-2020-08-01 10:59:54: 11765 activities written to file, +0:00:00.104998s
-2020-08-01 10:59:54: Calculating deals status pivot, +0:00:00s
-2020-08-01 10:59:54: Reading deal status history file, +0:00:00.017000s
-2020-08-01 10:59:54: Writing deals status pivot to file, +0:00:00.014001s
+2020-08-01 11:59:36: Downloading deals
+2020-08-01 11:59:36: Downloading employees to assign, +0:00:00.303123s
+2020-08-01 11:59:37: Transferring deals, +0:00:00.658269s
+2020-08-01 11:59:37: Adding comments, +0:00:00s
+2020-08-01 11:59:37: Downloading deals: starting, +0:00:00.000979s
+2020-08-01 11:59:37: Downloading deals: finished in 0:00:00.317013s
+2020-08-01 11:59:37: Getting contacts: starting, +0:00:00s
+2020-08-01 11:59:38: Getting contacts: finished in 0:00:00.813035s
+2020-08-01 11:59:38: Transforming data: starting, +0:00:00s
+2020-08-01 11:59:38: Transforming data: finished in 0:00:00.001013s
+2020-08-01 11:59:38: Patching assignments: starting, +0:00:00s
+2020-08-01 11:59:41: Done with 0 errors, +0:00:02.701970s
+2020-08-01 11:59:41: Patching assignments: finished in 0:00:02.701970s
+2020-08-01 11:59:41: Downloading users, +0:00:00.001000s
+2020-08-01 11:59:41: Downloading stages, +0:00:00.164011s
+2020-08-01 11:59:42: Downloading deals, +0:00:00.632396s
+2020-08-01 11:59:43: Transforming deals, +0:00:01.146856s
+2020-08-01 11:59:43: Writing deals to file, +0:00:00.008989s
+2020-08-01 11:59:43: Downloading deal activities, +0:00:00.043989s
+2020-08-01 11:59:45: 11765 activities downloaded, +0:00:01.697305s
+2020-08-01 11:59:45: Transforming activities, +0:00:00s
+2020-08-01 11:59:45: Writing activities to file, +0:00:00.053999s
+2020-08-01 11:59:45: 11765 activities written to file, +0:00:00.090994s
+2020-08-01 11:59:45: Calculating deals status pivot, +0:00:00.000997s
+2020-08-01 11:59:45: Reading deal status history file, +0:00:00.017001s
+2020-08-01 11:59:45: Writing deals status pivot to file, +0:00:00.014000s

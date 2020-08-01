@@ -26,33 +26,38 @@ deals = b.get_all('crm.deal.list', params={
     'select': ['ID', 'ASSIGNED_BY_ID']
 })
 
-log("Downloading employees to assign")
-employees = b.get_all('user.get', params={
-    'filter': {
-        'UF_DEPARTMENT': 24  # КЦ
-    }
-})
+if len(deals) > 0:
+    log("Downloading employees to assign")
+    employees = b.get_all('user.get', params={
+        'filter': {
+            'UF_DEPARTMENT': 24  # КЦ
+        }
+    })
 
-log("Transferring deals")
-assert all(b.call('crm.deal.update', [{
-    'id': d['ID'],
-    'fields': {
-        'STAGE_ID': 'NEW',
-        'UF_CRM_1582643149318': '',
+    log("Transferring deals")
+    assert all(b.call('crm.deal.update', [{
+        'id': d['ID'],
+        'fields': {
+            'STAGE_ID': 'NEW',
+            'UF_CRM_1582643149318': '',
 
-        # если был назначен кто-то из КЦ, то не меняем, 
-        # иначе назначаем кого-то из КЦ
-        'ASSIGNED_BY_ID': random.choice(employees)['ID']
-            if d['ASSIGNED_BY_ID'] not in [e['ID'] for e in employees] 
-            else d['ASSIGNED_BY_ID']
-    }
-} for d in deals]))
+            # если был назначен кто-то из КЦ, то не меняем, 
+            # иначе назначаем кого-то из КЦ
+            'ASSIGNED_BY_ID': random.choice(employees)['ID']
+                if d['ASSIGNED_BY_ID'] not in [e['ID'] for e in employees] 
+                else d['ASSIGNED_BY_ID']
+        }
+    } for d in deals]))
 
-log('Adding comments')
-b.call('crm.timeline.comment.add', [{
-    'fields': {
-        'ENTITY_ID': int(d['ID']),
-        'ENTITY_TYPE': 'deal',
-        'COMMENT': 'Автоматически возвращено из отложенных'
-    }
-} for d in deals])
+    log('Adding comments')
+    b.call('crm.timeline.comment.add', [{
+        'fields': {
+            'ENTITY_ID': int(d['ID']),
+            'ENTITY_TYPE': 'deal',
+            'COMMENT': 'Автоматически возвращено из отложенных'
+        }
+    } for d in deals])
+
+    log(f'{len(deals)} postponed deals processed. All done!')
+else:
+    log('Nothing to process :(')
