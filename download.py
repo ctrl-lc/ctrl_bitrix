@@ -1,10 +1,9 @@
 import pandas, datetime
 
-from lxutils import *
+from lxutils import log
 from fast_bitrix24 import Bitrix
 
-b = Bitrix("https://ctrlcrm.bitrix24.ru/rest/1/0agnq1xt4xv1cqnc/",
-    verbose=True) 
+b = Bitrix("https://ctrlcrm.bitrix24.ru/rest/1/0agnq1xt4xv1cqnc/") 
 
 log ("Downloading users")
 users = b.get_all('user.get')
