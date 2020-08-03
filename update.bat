@@ -1,1 +1,1 @@
-python.exe superscript.py > update.log
+python.exe superscript.py
