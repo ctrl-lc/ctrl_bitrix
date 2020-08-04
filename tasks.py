@@ -38,26 +38,44 @@ if len(deals) > 0:
             ID_list = [d['ID'] for d in deals])
 
         # добавляем в deals id основного контакта
+        # сначала сортируем оба массива по id сделки
+        deals.sort(key = lambda d: d['ID'])
+        deals_and_contact_ids.sort(key = lambda dc: dc[0])
         for i, dc in enumerate(deals_and_contact_ids):
+            # перебираем все контакты в сделке
             for c in dc[1]:
+                # и если контакт - основной, то записываем в сделку его id
                 if c['IS_PRIMARY'] == 'Y':
                     deals[i]['CONTACT_ID'] = c['CONTACT_ID']
                     break
-
+            else:
+                if len(dc[1]) > 0:
+                    raise RuntimeError(
+                        f'Сделка {dc[0]}: {len(dc[1])} контактов, но не одного основного')    
+        
+        # берем все данные отобранных контактов
         contacts = b.get_by_ID('crm.contact.get', 
             ID_list = [d['CONTACT_ID'] for d in deals 
-                if 'CONTACT_ID' in d.keys()])
+                if 'CONTACT_ID' in d.keys()],
+            params = {
+                'select': ['ID', 'PHONE', 'NAME', 'LAST_NAME']
+            })
 
-        # добавляем данные contacts в deals
-        for id, c in contacts:
-            # по каждой сделке
-            for i, d in enumerate(deals):
-                # если контакт заполнен и его id совпадает с искомым
-                if ('CONTACT_ID' in d.keys()) and (int(c['ID']) == int(d['CONTACT_ID'])):
-                    # добавляем первый телефонный номер
-                    deals[i]['PHONE'] = c['PHONE'][0]['VALUE']
+        # причесываем контакты
+        contacts_processed = {}
+        for contact_id, content in contacts:
+            contacts_processed.update({
+                # добавляем первый телефонный номер
+                int(contact_id): content['PHONE'][0]['VALUE']
+            })
 
-
+        # добавляем телефоны из contacts в deals
+        for i, d in enumerate(deals):
+            assert d['ID'] == deals[i]['ID']
+            # если контакт заполнен и его id совпадает с искомым
+            if ('CONTACT_ID' in d.keys()) and (d['CONTACT_ID'] in contacts_processed.keys()):
+                deals[i]['PHONE'] = contacts_processed[d['CONTACT_ID']]
+                
         log('Adding tasks')
         new_tasks = [{
             'fields': {
