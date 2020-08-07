@@ -23,7 +23,7 @@ deals = b.get_all('crm.deal.list', params={
         '>UF_CRM_1582643149318': '2020-05-25',
         '<UF_CRM_1582643149318': datetime.date.today()
     },
-    'select': ['ID', 'ASSIGNED_BY_ID']
+    'select': ['ID', 'ASSIGNED_BY_ID', 'TITLE']
 })
 
 if len(deals) > 0:
@@ -50,13 +50,23 @@ if len(deals) > 0:
     } for d in deals]))
 
     log('Adding comments')
-    b.call('crm.timeline.comment.add', [{
+    
+    tasks = [{
         'fields': {
             'ENTITY_ID': int(d['ID']),
             'ENTITY_TYPE': 'deal',
-            'COMMENT': 'Автоматически возвращено из отложенных'
+            'COMMENT': 'Автоматически возвращено из отложенных',
+            'TITLE': d['TITLE']
         }
-    } for d in deals])
+    } for d in deals]
+    
+    for i in range(tasks):
+        tasks[i]['TITLE'] = tasks[i]['TITLE'] + (
+            ' (из отложенных)'
+            if 'из отложенных' not in tasks[i]['TITLE'].lower() 
+            else '') 
+    
+    b.call('crm.timeline.comment.add', )
 
     log(f'{len(deals)} postponed deals processed. All done!')
 else:
