@@ -77,6 +77,7 @@ if len(deals) > 0:
                 deals[i]['PHONE'] = contacts_processed[d['CONTACT_ID']]
                 
         log('Adding tasks')
+        
         new_tasks = [{
             'fields': {
                 "OWNER_TYPE_ID": 2, # из метода crm.enum.ownertype: 2 - тип "сделка"
@@ -93,7 +94,7 @@ if len(deals) > 0:
                 "RESPONSIBLE_ID": d['ASSIGNED_BY_ID']
             }
         } for i, d in enumerate(deals) if (
-            (d['PHONE']) and (d['CONTACT_ID'])
+            ('PHONE' in d.keys()) and ('CONTACT_ID' in d.keys())
         )]
 
         if len(new_tasks) > 0:
