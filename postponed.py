@@ -61,7 +61,7 @@ if len(deals) > 0:
     } for d in deals]
     
     for i in range(len(tasks)):
-        tasks[i]['TITLE'] = tasks[i]['TITLE'] + (
+        tasks[i]['fields']['TITLE'] += (
             ' (из отложенных)'
             if 'из отложенных' not in tasks[i]['TITLE'].lower() 
             else '') 
