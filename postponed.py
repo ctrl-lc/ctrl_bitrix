@@ -34,18 +34,27 @@ if len(deals) > 0:
         }
     })
 
-    log("Transferring deals")
+    log(f"Возвращаю {len(deals)} сделок из отложенных")
     assert all(b.call('crm.deal.update', [{
         'id': d['ID'],
         'fields': {
-            'STAGE_ID': 'NEW',
-            'UF_CRM_1582643149318': '',
+            'STAGE_ID': 'NEW', # первый этап
+            'UF_CRM_1582643149318': '', # стираем дату возврата
+            
+            # добавляем в название сделки "из отложенных",
+            # если такой фразы там еще нет
+            'TITLE': d['TITLE'] + (
+                ' - из отложенных' 
+                if 'из отложенных' not in d['TITLE'].lower()
+                else ''
+            ),
 
             # если был назначен кто-то из КЦ, то не меняем, 
             # иначе назначаем кого-то из КЦ
             'ASSIGNED_BY_ID': random.choice(employees)['ID']
                 if d['ASSIGNED_BY_ID'] not in [e['ID'] for e in employees] 
                 else d['ASSIGNED_BY_ID']
+                
         }
     } for d in deals]))
 
@@ -56,15 +65,8 @@ if len(deals) > 0:
             'ENTITY_ID': int(d['ID']),
             'ENTITY_TYPE': 'deal',
             'COMMENT': 'Автоматически возвращено из отложенных',
-            'TITLE': d['TITLE']
         }
     } for d in deals]
-    
-    for i in range(len(tasks)):
-        tasks[i]['fields']['TITLE'] += (
-            ' (из отложенных)'
-            if 'из отложенных' not in tasks[i]['TITLE'].lower() 
-            else '') 
     
     b.call('crm.timeline.comment.add', tasks)
 
