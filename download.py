@@ -1,9 +1,9 @@
 import pandas, datetime
 
-from lxutils import log
+from lxutils import log, config
 from fast_bitrix24 import Bitrix
 
-b = Bitrix("https://ctrlcrm.bitrix24.ru/rest/1/0agnq1xt4xv1cqnc/") 
+b = Bitrix(config['tokens']['webhook'])
 
 log ("Downloading users")
 users = b.get_all('user.get')
@@ -13,7 +13,7 @@ stages = b.get_all('crm.dealcategory.stage.list')
 
 log ("Downloading deals")
 fields = ['ID', 'STAGE_ID', 'ASSIGNED_BY_ID', 'OPPORTUNITY', 'BEGINDATE',
-    'CLOSEDATE', 'CLOSED', 'SOURCE_ID', 'SOURCE_DESCRIPTION', 'UTM_SOURCE', 
+    'CLOSEDATE', 'CLOSED', 'SOURCE_ID', 'SOURCE_DESCRIPTION', 'UTM_SOURCE',
     'TITLE', 'DATE_CREATE', 'UF_CRM_1579180371132', 'UF_CRM_5E20307D5B33E']
 deals = b.get_all('crm.deal.list', params = {'select': fields})
 

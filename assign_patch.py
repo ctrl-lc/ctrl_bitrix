@@ -1,25 +1,20 @@
 import itertools
-from lxutils import *
+from lxutils import timer, log, config
 from fast_bitrix24 import Bitrix
 
-b = Bitrix("https://ctrlcrm.bitrix24.ru/rest/1/0agnq1xt4xv1cqnc/") 
+b = Bitrix(config['tokens']['webhook'])
 
 with timer("Downloading deals"):
-    deals = b.get_all('crm.deal.list', params = {
+    deals = b.get_all('crm.deal.list', params={
         'select': ['ID', 'ASSIGNED_BY_ID'],
-        'filter': {
-            'CLOSED': 'N'
-        }
+        'filter': {'CLOSED': 'N'}
     })
-    deals.sort(key = lambda d: int(d['ID']))
 
 with timer('Getting contacts'):
     contacts_by_deal = b.get_by_ID('crm.deal.contact.items.get',
-        [d['ID'] for d in deals],
-        params = {'select': ['CONTACT_ID']}
-    )
-    contacts_by_deal.sort(key = lambda cbd: int(cbd[0]))
-    
+                                   [d['ID'] for d in deals],
+                                   params={'select': ['CONTACT_ID']})
+
 with timer('Transforming data'):
     to_unpack = [
         [
@@ -27,12 +22,12 @@ with timer('Transforming data'):
                 int(c['CONTACT_ID']),
                 int(d['ASSIGNED_BY_ID'])
             )
-            for c in contacts_by_deal[i][1]
+            for c in contacts_by_deal[d['ID']]
         ]
-        for i, d in enumerate(deals)]
+        for d in deals]
 
     unpacked = list(itertools.chain(*to_unpack))
-    
+
     patch_tasks = [
         {
             'ID': pt[0],
