@@ -37,7 +37,7 @@ df.to_csv("deals.csv", index = False)
 
 log ("Downloading deal activities")
 
-fields = {'START_TIME', 'DEADLINE', 'OWNER_ID', 'RESPONSIBLE_ID', 'COMPLETED', 'END_TIME', 'ID'}
+fields = ['START_TIME', 'DEADLINE', 'OWNER_ID', 'RESPONSIBLE_ID', 'COMPLETED', 'END_TIME', 'ID']
 
 activities = b.get_all('crm.activity.list', params={
     'select': fields
