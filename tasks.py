@@ -36,58 +36,57 @@ class TaskMonitor:
 
     def download_deals(self):
         log("Downloading deals")
-        self.deals = self.b.get_all('crm.deal.list', params={
+        result = self.b.get_all('crm.deal.list', params={
             'filter': {
                 'CLOSED': 'N'  # берем только сделки в работе
             },
             'select': ['ID', 'ASSIGNED_BY_ID']
         })
+        self.deals = {d['ID']: {'ASSIGNED_BY_ID': d['ASSIGNED_BY_ID']}
+                      for d in result}
 
     def download_activities(self):
         log("Downloading activities")
         self.activities = self.b.call('crm.activity.list', [{
             'filter': {
-                'OWNER_ID': d['ID'],
+                'OWNER_ID': deal_ID,
                 'OWNER_TYPE_ID': 2,  # только по сделкам
                 'COMPLETED': 'N'  # берем только незакрытые задачи
             }
-        } for d in self.deals])
+        } for deal_ID in self.deals])
 
     def keep_only_deals_without_tasks(self):
         # убираем сделки, в которых есть активные задачи
-        owner_IDs = (a['OWNER_ID'] for a in self.activities)
-        self.deals = [d for d in self.deals
-                      if d['ID'] not in owner_IDs]
+        owner_IDs = [a[0]['OWNER_ID'] for a in self.activities if a]
+        self.deals = {ID: contents for ID, contents in self.deals.items()
+                      if ID not in owner_IDs}
 
     def download_contact_ids_from_deals(self):
         log("Downloading contacts")
         self.deals_and_contact_ids = self.b.get_by_ID(
             'crm.deal.contact.items.get',
-            ID_list=[d['ID'] for d in self.deals])
+            ID_list=self.deals)
 
     def add_contact_ids_to_deals(self):
-        self.deals.sort(key=lambda d: d['ID'])
-        self.deals_and_contact_ids.sort(key=lambda dc: dc[0])
-
-        for i, dc in enumerate(self.deals_and_contact_ids):
+        for deal_ID, contact_list in self.deals_and_contact_ids.items():
             # перебираем все контакты в сделке
-            for c in dc[1]:
+            for contact in contact_list:
                 # и если контакт - основной, то записываем в сделку его id
-                if c['IS_PRIMARY'] == 'Y':
-                    self.deals[i]['CONTACT_ID'] = c['CONTACT_ID']
+                if contact['IS_PRIMARY'] == 'Y':
+                    self.deals[deal_ID]['CONTACT_ID'] = contact['CONTACT_ID']
                     break
             else:
-                if len(dc[1]) > 0:
+                if len(contact_list) > 0:
                     raise RuntimeError(
-                        f'Сделка {dc[0]}: {len(dc[1])} контактов, '
+                        f'Сделка {deal_ID}: {len(contact_list)} контактов, '
                         'но ни одного основного')
 
     def download_contacts_details(self):
         # берем все данные отобранных контактов
         self.contacts = self.b.get_by_ID(
             'crm.contact.get',
-            ID_list=[d['CONTACT_ID'] for d in self.deals
-                     if 'CONTACT_ID' in d.keys()],
+            ID_list=[contents['CONTACT_ID'] for contents in self.deals.values()
+                     if 'CONTACT_ID' in contents],
             params={
                 'select': ['ID', 'PHONE', 'NAME', 'LAST_NAME']
             })
@@ -95,39 +94,38 @@ class TaskMonitor:
     def add_phones_to_deals(self):
         # причесываем контакты
         contacts_processed = {}
-        for contact_id, content in self.contacts:
+        for contact_id, content in self.contacts.items():
             contacts_processed.update({
                 # добавляем первый телефонный номер
                 int(contact_id): content['PHONE'][0]['VALUE']
             })
 
         # добавляем телефоны из contacts в deals
-        for i, d in enumerate(self.deals):
-            assert d['ID'] == self.deals[i]['ID']
+        for deal_ID, contents in self.deals.items():
             # если контакт заполнен и его id совпадает с искомым
-            if ('CONTACT_ID' in d.keys() and
-                    d['CONTACT_ID'] in contacts_processed):
-                self.deals[i]['PHONE'] = contacts_processed[d['CONTACT_ID']]
+            if ('CONTACT_ID' in contents and
+                    contents['CONTACT_ID'] in contacts_processed):
+                self.deals[deal_ID]['PHONE'] = contacts_processed[contents['CONTACT_ID']]
 
     def compose_new_tasks(self):
         self.new_tasks = [{
             'fields': {
                 # из метода crm.enum.ownertype: 2 - тип "сделка"
                 "OWNER_TYPE_ID": 2,
-                "OWNER_ID": d['ID'],  # id сделки
+                "OWNER_ID": deal_ID,  # id сделки
                 "TYPE_ID": 2,  # звонок - из метода crm.enum.activitytype
                 "SUBJECT": "Позвонить клиенту",
                 "START_TIME": datetime.date.today(),
                 "COMMUNICATIONS": [{
-                    'VALUE': d['PHONE'],
-                    'ENTITY_ID': d['CONTACT_ID'],
+                    'VALUE': contents['PHONE'],
+                    'ENTITY_ID': contents['CONTACT_ID'],
                     'ENTITY_TYPE': 3  # тип контакт
                 }],
                 "COMPLETED": "N",
-                "RESPONSIBLE_ID": d['ASSIGNED_BY_ID']
+                "RESPONSIBLE_ID": contents['ASSIGNED_BY_ID']
             }
-        } for i, d in enumerate(self.deals)
-          if {'PHONE', 'CONTACT_ID'} <= d.keys()]
+        } for deal_ID, contents in self.deals.items()
+          if {'PHONE', 'CONTACT_ID'} <= contents.keys()]
 
     def upload_new_tasks(self):
         log('Adding tasks')
