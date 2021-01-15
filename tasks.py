@@ -95,17 +95,21 @@ class TaskMonitor:
         # причесываем контакты
         contacts_processed = {}
         for contact_id, content in self.contacts.items():
-            contacts_processed.update({
-                # добавляем первый телефонный номер
-                int(contact_id): content['PHONE'][0]['VALUE']
-            })
+            if 'PHONE' in content:
+                contacts_processed.update({
+                    # добавляем первый телефонный номер
+                    int(contact_id): content['PHONE'][0]['VALUE']
+                })
 
         # добавляем телефоны из contacts в deals
         for deal_ID, contents in self.deals.items():
             # если контакт заполнен и его id совпадает с искомым
             if ('CONTACT_ID' in contents and
                     contents['CONTACT_ID'] in contacts_processed):
-                self.deals[deal_ID]['PHONE'] = contacts_processed[contents['CONTACT_ID']]
+                self.deals[deal_ID]['PHONE'] = \
+                    contacts_processed[contents['CONTACT_ID']]
+
+            # TODO: А что делать с теми сделками, где у контакта нет телефона?
 
     def compose_new_tasks(self):
         self.new_tasks = [{
