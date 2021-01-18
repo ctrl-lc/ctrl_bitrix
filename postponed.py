@@ -15,9 +15,7 @@ import random
 from lxutils import log, config
 from fast_bitrix24 import Bitrix
 
-
-LAST_SALESMAN_FIELD = 'UF_CRM_1610451561'
-BRING_BACK_DUE_FIELD = 'UF_CRM_1582643149318'
+from constants import Stage, Field
 
 
 b = Bitrix(config['tokens']['webhook'])
@@ -45,9 +43,9 @@ def download_postponed_deals():
     log("Downloading postponed deals")
     return b.get_all('crm.deal.list', params={
         'filter': {
-            'STAGE_ID': 9,  # отложенные
+            'STAGE_ID': Stage.POSTPONED,  # отложенные
         },
-        'select': ['ID', 'ASSIGNED_BY_ID', 'TITLE', BRING_BACK_DUE_FIELD]
+        'select': ['ID', 'ASSIGNED_BY_ID', 'TITLE', Field.BRING_BACK_DUE]
     })
 
 
@@ -66,7 +64,7 @@ def save_last_salesman(deals, salespeople_IDs):
     save_list = [{
         'ID': deal['ID'],
         'fields': {
-            LAST_SALESMAN_FIELD: deal['ASSIGNED_BY_ID']  # Последний продавец
+            Field.LAST_SALESMAN: deal['ASSIGNED_BY_ID']  # Последний продавец
         }
     } for deal in deals if deal['ASSIGNED_BY_ID'] in salespeople_IDs]
 
@@ -79,7 +77,7 @@ def pick_due(deals):
     log('Filtering deals to bring back')
     str_today = str(datetime.date.today())
     return [deal for deal in deals
-            if '2020-05-25' < deal[BRING_BACK_DUE_FIELD] <= str_today]
+            if '2020-05-25' < deal[Field.BRING_BACK_DUE] <= str_today]
 
 
 def get_CC_employees():
@@ -97,8 +95,8 @@ def bring_back(due, CC_employee_IDs):
     assert all(b.call('crm.deal.update', [{
         'id': d['ID'],
         'fields': {
-            'STAGE_ID': 'NEW',  # первый этап
-            BRING_BACK_DUE_FIELD: '',  # стираем дату возврата
+            'STAGE_ID': Stage.CALL_CENTER,  # первый этап
+            Field.BRING_BACK_DUE: '',  # стираем дату возврата
 
             # добавляем в название сделки "из отложенных",
             # если такой фразы там еще нет
