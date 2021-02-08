@@ -14,26 +14,36 @@ class TaskMonitor:
         self.b = Bitrix(config['tokens']['webhook'])
 
     def main(self):
+        self.prepare_deals_without_tasks()
+
+        if len(self.deals) > 0:
+            self.download_contact_ids_from_deals()
+            self.add_contact_ids_to_deals()
+            self.download_contacts_details()
+            self.add_phones_to_deals()
+            self.compose_new_tasks()
+
+            if len(self.new_tasks) > 0:
+                self.upload_new_tasks()
+                log("Checking...")
+                self.prepare_deals_without_tasks()
+            else:
+                log('No active deals without open tasks with contacts :(')
+
+        else:
+            log('No active deals without open tasks :(')
+
+        log('All done!')
+
+    def prepare_deals_without_tasks(self):
         self.download_deals()
         self.download_activities()
         if len(self.deals) > 0:
-            self.keep_only_deals_without_tasks()
-            if len(self.deals) > 0:
-                self.download_contact_ids_from_deals()
-                self.add_contact_ids_to_deals()
-                self.download_contacts_details()
-                self.add_phones_to_deals()
-                self.compose_new_tasks()
-                if len(self.new_tasks) > 0:
-                    self.upload_new_tasks()
-                else:
-                    log('No active deals without open tasks with contacts :(')
-            else:
-                log('No active deals without open tasks :(')
+            self.keep_only_deals_without_tasks()            
+            log(f"{len(self.deals)} deals without open tasks found")
         else:
             log('No active deals :(')
-        log('All done!')
-
+    
     def download_deals(self):
         log("Downloading deals")
         result = self.b.get_all('crm.deal.list', params={
@@ -64,7 +74,7 @@ class TaskMonitor:
     def download_contact_ids_from_deals(self):
         log("Downloading contacts")
         self.deals_and_contact_ids = self.b.get_by_ID(
-            'crm.deal.contact.items.get',
+            'crm.deal.contact.items.get',  # Возвращает набор контактов, связанных с указанной сделкой
             ID_list=self.deals)
 
     def add_contact_ids_to_deals(self):
