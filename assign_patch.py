@@ -1,5 +1,6 @@
 import itertools
-from lxutils import timer, log, config
+from lxutils.log import timer, log
+from lxutils import config
 from fast_bitrix24 import Bitrix
 
 b = Bitrix(config['tokens']['webhook'])

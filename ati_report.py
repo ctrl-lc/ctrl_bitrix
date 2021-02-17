@@ -1,6 +1,7 @@
 from typing import ChainMap
 from fast_bitrix24 import Bitrix
-from lxutils import config, timer
+from lxutils import config
+from lxutils.log import timer
 from pandas import DataFrame, concat
 from gspread import service_account
 from io import StringIO

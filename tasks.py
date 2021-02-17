@@ -4,7 +4,8 @@
 
 import datetime
 
-from lxutils import log, config
+from lxutils.log import log
+from lxutils import config
 from fast_bitrix24 import Bitrix
 
 

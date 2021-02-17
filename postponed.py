@@ -12,7 +12,8 @@
 import datetime
 import random
 
-from lxutils import log, config
+from lxutils.log import log
+from lxutils import config
 from fast_bitrix24 import Bitrix
 
 from constants import Stage, Field
