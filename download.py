@@ -5,6 +5,8 @@ from fast_bitrix24 import Bitrix
 from lxutils import config
 from lxutils.log import log
 
+from constants import Field
+
 b = Bitrix(config["tokens"]["webhook"])
 
 
@@ -46,8 +48,8 @@ def get_deals(b, users, stages):
         "UTM_SOURCE",
         "TITLE",
         "DATE_CREATE",
-        "UF_CRM_1579180371132",
-        "UF_CRM_5E20307D5B33E",
+        Field.REASON,
+        Field.FORM_NAME,
     ]
     deals = b.get_all("crm.deal.list", params={"select": fields})
 
@@ -86,6 +88,7 @@ def get_activities(b, users):
         "COMPLETED",
         "END_TIME",
         "ID",
+        "TYPE_ID",
     ]
     activities = b.get_all("crm.activity.list", params={"select": fields})
     log(
