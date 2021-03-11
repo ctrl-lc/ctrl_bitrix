@@ -106,16 +106,7 @@ def get_activities(b, users):
 
 def get_calls(b, users):
     log("Downloading calls")
-    fields = [
-        "CALL_TYPE",
-        "PORTAL_USER_ID",
-        "CALL_DURATION",
-        "CALL_START_DATE",
-        "CALL_FAILED_CODE",
-        "CRM_ENTITY_ID",
-        "CRM_ENTITY_TYPE",
-    ]
-    calls = b.get_all("voximplant.statistic.get", params={"select": fields})
+    calls = b.get_all("voximplant.statistic.get")
     log(f"{pd.DataFrame(calls).shape[0]} calls downloaded")
 
     for c in calls:
@@ -124,6 +115,23 @@ def get_calls(b, users):
     log("Writing calls to file")
     df = pd.DataFrame(calls)
     df.to_csv("calls.csv", index=False, encoding="utf-8")
+
+    log(f"{df.shape[0]} calls written to file")
+
+
+def get_contacts(b):
+    log("Downloading contacts")
+    fields = [
+        "DATE_CREATE",
+        "NAME",
+        "LAST_NAME",
+    ]
+    calls = b.get_all("crm.contact.list", params={"select": fields})
+    log(f"{pd.DataFrame(calls).shape[0]} contacts downloaded")
+
+    log("Writing contacts to file")
+    df = pd.DataFrame(calls)
+    df.to_csv("contacts.csv", index=False, encoding="utf-8")
 
     log(f"{df.shape[0]} calls written to file")
 
@@ -150,4 +158,5 @@ stages = get_stages(b)
 deals = get_deals(b, users, stages)
 get_activities(b, users)
 get_calls(b, users)
+get_contacts(b)
 get_deals_status_pivot(deals)
