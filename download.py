@@ -20,6 +20,17 @@ def get_stages(b):
     return stages
 
 
+def user_id_to_name(*, data, user_field, users):
+    try:
+        user_record = next(u for u in users if u["ID"] == data[user_field])
+        data[user_field] = user_record["LAST_NAME"]
+
+    except StopIteration:
+        pass
+
+    return data
+
+
 def get_deals(b, users, stages):
     log("Downloading deals")
     fields = [
@@ -53,9 +64,9 @@ def get_deals(b, users, stages):
             ]
         except StopIteration:
             pass
-        d["ASSIGNED_BY_ID"] = next(u for u in users if u["ID"] == d["ASSIGNED_BY_ID"])[
-            "LAST_NAME"
-        ]
+
+        user_id_to_name(data=d, user_field="ASSIGNED_BY_ID", users=users)
+
         d["URL"] = "https://ctrlcrm.bitrix24.ru/crm/deal/details/" + d["ID"] + "/"
 
     log("Writing deals to file")
@@ -83,12 +94,7 @@ def get_activities(b, users):
 
     log("Transforming activities")
     for a in activities:
-        try:
-            a["RESPONSIBLE_ID"] = next(
-                u for u in users if int(u["ID"]) == int(a["RESPONSIBLE_ID"])
-            )["LAST_NAME"]
-        except:
-            pass
+        user_id_to_name(data=a, user_field="RESPONSIBLE_ID", users=users)
 
     log("Writing activities to file")
     df = pd.DataFrame(activities)
