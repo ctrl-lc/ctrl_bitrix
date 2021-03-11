@@ -119,21 +119,45 @@ def get_calls(b, users):
     log(f"{df.shape[0]} calls written to file")
 
 
-def get_contacts(b):
+def get_contacts(b: Bitrix, deals):
     log("Downloading contacts")
     fields = [
         "DATE_CREATE",
         "NAME",
         "LAST_NAME",
     ]
-    calls = b.get_all("crm.contact.list", params={"select": fields})
-    log(f"{pd.DataFrame(calls).shape[0]} contacts downloaded")
+    contacts = b.get_all("crm.contact.list", params={"select": fields})
+    log(f"{len(contacts)} contacts downloaded")
+
+    log("Downloading relations from deals to contacts")
+    rels = b.get_by_ID("crm.deal.contact.items.get", [d["ID"] for d in deals])
+    log(f"{len(rels)} relationships downloaded")
+
+    log("Finding deals for contacts")
+    found = 0
+    for i, contact in enumerate(contacts):
+        found_deal_id = None
+
+        for deal_id, deal_rels in rels.items():
+            for rel in deal_rels:
+                if int(rel["CONTACT_ID"]) == int(contact["ID"]):
+                    found_deal_id = deal_id
+                    break
+
+            if found_deal_id:
+                break
+
+        if found_deal_id:
+            found += 1
+            contacts[i]["DEAL_ID"] = found_deal_id
+
+    log(f"{found} deals found")
 
     log("Writing contacts to file")
-    df = pd.DataFrame(calls)
+    df = pd.DataFrame(contacts)
     df.to_csv("contacts.csv", index=False, encoding="utf-8")
 
-    log(f"{df.shape[0]} calls written to file")
+    log(f"{df.shape[0]} contacts written to file")
 
 
 def get_deals_status_pivot(deals):
@@ -158,5 +182,5 @@ stages = get_stages(b)
 deals = get_deals(b, users, stages)
 get_activities(b, users)
 get_calls(b, users)
-get_contacts(b)
+get_contacts(b, deals)
 get_deals_status_pivot(deals)
