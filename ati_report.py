@@ -92,7 +92,7 @@ def filter_and_rename(df):
 
 
 def upload_to_gsheets(df):
-    with timer("Loading stocks to Google Sheets"):
+    with timer("Loading to Google Sheets"):
         gc = service_account(filename="robotic-rampart-255014-e2f22bfae60e.json")
         with StringIO() as content:
             df.to_csv(content, index=False, encoding="utf-8")
