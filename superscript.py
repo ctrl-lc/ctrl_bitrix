@@ -10,6 +10,8 @@ def main():
         import download
     with timer("Выгружаю отчет для АТИ"):
         import ati_report
+    with timer("Выгружаю отчет для Диди"):
+        import didi_report
 
 
 try:
