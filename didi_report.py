@@ -18,6 +18,7 @@ def main():
     df = add_stage_names(df)
     df = add_assigned(df)
     df = filter_and_rename(df)
+    df = replace_rejection_reason(df)
     upload_to_gsheets(df)
 
 
@@ -40,10 +41,10 @@ def flatten(contact: dict):
         if field in contact:
             content = contact[field][0]
             new_fields = {
-                    f"CONTACT_{field}": value
-                    for key, value in content.items()
-                    if key == "VALUE"
-                }
+                f"CONTACT_{field}": value
+                for key, value in content.items()
+                if key == "VALUE"
+            }
             contact.update(new_fields)
             contact.pop(field)
     return contact
@@ -97,6 +98,49 @@ def filter_and_rename(df):
             for tup in df.itertuples()
         ]
     )
+
+
+def replace_rejection_reason(df):
+
+    # список ниже взят из кода html страницы со сделкой по xpath-адресу
+    # //*[@id="UF_CRM_1613575670261_control_XgfDB91626464352"]/div[@data-name="UF_CRM_1613575670261"]/@data-items
+
+    # TODO: понятно, что при изменении набора причин отказа эта функция
+    # перестанет работать как надо. Нужно понять, как через REST API
+    # загружать актуальный список возможных значений этого поля.
+
+    REASON_MAP = [
+        {"NAME": "не выбрано", "VALUE": ""},
+        {"NAME": "ОПФ", "VALUE": "132"},
+        {"NAME": "Нет Поручителя", "VALUE": "134"},
+        {
+            "NAME": "Не удалось дозвониться (некорректные контакты, не выходит на связь)",
+            "VALUE": "136",
+        },
+        {"NAME": "Спам (дубли, тесты, ошибочные заявки)", "VALUE": "138"},
+        {"NAME": "Отказ СБ", "VALUE": "140"},
+        {"NAME": "Отказ ОА", "VALUE": "142"},
+        {"NAME": "Отказ клиента – дорогой график", "VALUE": "144"},
+        {"NAME": "Отказ клиента – больше не актуально", "VALUE": "146"},
+        {"NAME": "Отказ клиента – ушел к конкурентам", "VALUE": "148"},
+        {"NAME": "Отказ клиента – перестал выходить на связь", "VALUE": "150"},
+        {"NAME": "Отказ клиента в сборе документов", "VALUE": "152"},
+        {"NAME": "Отказ клиента после неудачного подбора", "VALUE": "154"},
+        {"NAME": "Отказ клиента из-за плохих отзывов", "VALUE": "156"},
+        {"NAME": "Нужен только прицеп", "VALUE": "158"},
+        {"NAME": "Обороты менее 500 тыс", "VALUE": "160"},
+        {"NAME": "Тип ТС", "VALUE": "162"},
+        {"NAME": "Возраст ТС", "VALUE": "164"},
+        {"NAME": "Стоп регион", "VALUE": "166"},
+    ]
+
+    df_reason = DataFrame(REASON_MAP)
+
+    df["Причина отказа"] = df[["Причина отказа"]].merge(
+        df_reason, left_on="Причина отказа", right_on="VALUE"
+    )["NAME"]
+
+    return df
 
 
 def upload_to_gsheets(df):
