@@ -9,25 +9,47 @@ from pandas import DataFrame
 
 from constants import Field
 
+CATEGORY_ID = 6
+REASON = "UF_CRM_1613575670261"
+
 bx = Bitrix(config["tokens"]["webhook"])
 
 
 def main():
+    PIPELINE = [
+        date_trunc,
+        add_contacts,
+        add_stage_names,
+        add_assigned,
+        replace_rejection_reason,
+        filter_and_rename,
+    ]
+
     df = get_didi_deals()
-    df = add_contacts(df)
-    df = add_stage_names(df)
-    df = add_assigned(df)
-    df = filter_and_rename(df)
-    df = replace_rejection_reason(df)
+
+    for func in PIPELINE:
+        df = func(df)
+
     upload_to_gsheets(df)
 
 
 def get_didi_deals():
     deals = bx.get_all(
-        "crm.deal.list", {"select": ["*", "UF_*"], "filter": {"CATEGORY_ID": 6}}
+        "crm.deal.list",
+        {
+            "select": ["*", "UF_*"],
+            "filter": {"CATEGORY_ID": CATEGORY_ID},
+        },
     )
 
-    return DataFrame(deals)
+    return DataFrame(deals).sort_values("DATE_CREATE")
+
+
+def date_trunc(df: DataFrame):
+    for col in ["DATE_CREATE", "CLOSEDATE", Field.BRING_BACK_DUE]:
+        df[col] = df[col].str[:10]
+
+    return df
 
 
 def add_contacts(df):
@@ -51,52 +73,19 @@ def flatten(contact: dict):
 
 
 def add_stage_names(df):
-    stages = bx.get_all(
-        "crm.dealcategory.stage.list", {"select": ["STATUS_ID", "NAME"]}
-    )
-    return df.merge(
-        DataFrame(stages), how="left", left_on="STAGE_ID", right_on="STATUS_ID"
-    )
+    stages = DataFrame(bx.get_all("crm.dealcategory.stage.list", {"id": CATEGORY_ID}))
+
+    df["STAGE_NAME"] = df[["STAGE_ID"]].merge(
+        stages, how="left", left_on="STAGE_ID", right_on="STATUS_ID"
+    )["NAME"]
+
+    return df
 
 
 def add_assigned(df):
     users = bx.get_all("user.get")
     return df.merge(
         DataFrame(users), how="left", left_on="ASSIGNED_BY_ID_x", right_on="ID"
-    )
-
-
-def filter_and_rename(df):
-    RENAME_AND_KEEP = {
-        "ID_x": "ID сделки",
-        "DATE_CREATE_x": "Получена",
-        "UTM_SOURCE_x": "Источник",
-        "NAME_x": "Имя клиента",
-        "UF_CRM_60A371AD2EB58": "Название парка",
-        "CONTACT_PHONE": "Телефон",
-        "CONTACT_EMAIL": "Почта",
-        "NAME_y": "Статус",
-        "LAST_NAME_y": "Сотрудник CTRL",
-        "UF_CRM_609E73EBA2F67": "ИНН",
-        "UF_CRM_609E73EBC9318": "Город регистрации автопарка",
-        "UF_CRM_609E73EBED9DD": "Номер договора с Агрегатором",
-        "UF_CRM_609E73EC142BF": "Кол-во машин в автопарке",
-        "UF_CRM_609E73EC9EB98": "Желаемый аванс",
-        "UF_CRM_60A371ADDA256": "Размер сделки (количество авто)",
-        "UF_CRM_60A371AE272E3": "Марка/модель",
-        "UF_CRM_60A371AE78A7A": "Менеджер DIDI",
-        Field.BRING_BACK_DUE: "Дата возврата из отложенных",
-        "UF_CRM_1624037474589": "Кол-во выданных машин",
-        "UF_CRM_1606205926614": "Дата выдачи",
-        "UF_CRM_1613575670261": "Причина отказа",
-        "UF_CRM_1579180371132": "Причина отказа - комментарий",
-        "CLOSEDATE": "Закрыта",
-    }
-    return DataFrame(
-        [
-            {RENAME_AND_KEEP[key]: tup._asdict()[key] for key in RENAME_AND_KEEP}
-            for tup in df.itertuples()
-        ]
     )
 
 
@@ -136,11 +125,42 @@ def replace_rejection_reason(df):
 
     df_reason = DataFrame(REASON_MAP)
 
-    df["Причина отказа"] = df[["Причина отказа"]].merge(
-        df_reason, left_on="Причина отказа", right_on="VALUE"
-    )["NAME"]
+    df[REASON] = df[[REASON]].merge(df_reason, left_on=REASON, right_on="VALUE")["NAME"]
 
     return df
+
+
+def filter_and_rename(df):
+    RENAME_AND_KEEP = {
+        "UF_CRM_60A371AD2EB58": "Название парка",
+        "DATE_CREATE_x": "Получена",
+        "NAME_x": "Имя клиента",
+        "STAGE_NAME": "Статус",
+        "LAST_NAME_y": "Сотрудник CTRL",
+        "UF_CRM_609E73EBA2F67": "ИНН",
+        "UF_CRM_609E73EBC9318": "Город регистрации автопарка",
+        "UF_CRM_609E73EBED9DD": "Номер договора с Агрегатором",
+        "UF_CRM_609E73EC142BF": "Кол-во машин в автопарке",
+        "UF_CRM_609E73EC9EB98": "Желаемый аванс",
+        "UF_CRM_60A371ADDA256": "Размер сделки (количество авто)",
+        "UF_CRM_60A371AE272E3": "Марка/модель",
+        "UF_CRM_60A371AE78A7A": "Менеджер DIDI",
+        "UF_CRM_1606205926614": "Дата выдачи",
+        "UF_CRM_1624037474589": "Кол-во выданных машин",
+        Field.BRING_BACK_DUE: "Дата возврата из отложенных",
+        REASON: "Причина отказа",
+        "UF_CRM_1579180371132": "Причина отказа - комментарий",
+        "ID_x": "ID сделки",
+        "CONTACT_PHONE": "Телефон",
+        "CONTACT_EMAIL": "Почта",
+        "CLOSEDATE": "Закрыта",
+    }
+    return DataFrame(
+        [
+            {RENAME_AND_KEEP[key]: tup._asdict()[key] for key in RENAME_AND_KEEP}
+            for tup in df.itertuples()
+        ]
+    )
 
 
 def upload_to_gsheets(df):
