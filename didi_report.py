@@ -52,8 +52,8 @@ def date_trunc(df: DataFrame):
     return df
 
 
-def add_contacts(df):
-    contacts = bx.get_by_ID("crm.contact.get", df["CONTACT_ID"])
+def add_contacts(df: DataFrame):
+    contacts = bx.get_by_ID("crm.contact.get", df["CONTACT_ID"].dropna())
     flat = [flatten(content) for _, content in contacts.items()]
     return df.merge(DataFrame(flat), how="left", left_on="CONTACT_ID", right_on="ID")
 
